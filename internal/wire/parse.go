@@ -546,6 +546,9 @@ func (oc *objectCache) processExpr(info *types.Info, pkgPath string, expr ast.Ex
 		case "NewSet":
 			pset, errs := oc.processNewSet(info, pkgPath, call, nil, varName)
 			return pset, notePositionAll(exprPos, errs)
+		case "Subtract":
+			pset, errs := oc.processSubtract(info, pkgPath, call, nil, varName)
+			return pset, notePositionAll(exprPos, errs)
 		case "Bind":
 			b, err := processBind(oc.fset, info, call)
 			if err != nil {
@@ -880,6 +883,116 @@ func isPrevented(tag string) bool {
 	return reflect.StructTag(tag).Get("wire") == "-"
 }
 
+func (oc *objectCache) processSubtract(info *types.Info, pkgPath string, call *ast.CallExpr, args *InjectorArgs, varName string) (interface{}, []error) {
+	// Assumes that call.Fun is wire.Subtract.
+	if len(call.Args) < 2 {
+		return nil, []error{notePosition(oc.fset.Position(call.Pos()),
+			errors.New("call to Subtract must specify types to be subtracted"))}
+	}
+	firstArg, errs := oc.processExpr(info, pkgPath, call.Args[0], "")
+	if len(errs) > 0 {
+		return nil, errs
+	}
+	set, ok := firstArg.(*ProviderSet)
+	if !ok {
+		return nil, []error{
+			notePosition(oc.fset.Position(call.Pos()),
+				fmt.Errorf("first argument to Subtract must be a Set")),
+		}
+	}
+	pset := &ProviderSet{
+		Pos:          call.Pos(),
+		InjectorArgs: args,
+		PkgPath:      pkgPath,
+		VarName:      varName,
+		// Copy the other fields.
+		Providers: set.Providers,
+		Bindings:  set.Bindings,
+		Values:    set.Values,
+		Fields:    set.Fields,
+		Imports:   set.Imports,
+	}
+	ec := new(errorCollector)
+	for _, arg := range call.Args[1:] {
+		ptr, ok := info.TypeOf(arg).(*types.Pointer)
+		if !ok {
+			ec.add(notePosition(oc.fset.Position(arg.Pos()),
+				fmt.Errorf("argument to Subtract must be a pointer"),
+			))
+			continue
+		}
+		ec.add(oc.filterType(pset, ptr.Elem())...)
+	}
+	if len(ec.errors) > 0 {
+		return nil, ec.errors
+	}
+	return pset, nil
+}
+
+func (oc *objectCache) filterType(set *ProviderSet, t types.Type) []error {
+	hasType := func(outs []types.Type) bool {
+		for _, o := range outs {
+			if types.Identical(o, t) {
+				return true
+			}
+			pt, ok := o.(*types.Pointer)
+			if ok && types.Identical(pt.Elem(), t) {
+				return true
+			}
+		}
+		return false
+	}
+
+	providers := make([]*Provider, 0, len(set.Providers))
+	for _, p := range set.Providers {
+		if !hasType(p.Out) {
+			providers = append(providers, p)
+		}
+	}
+	set.Providers = providers
+
+	bindings := make([]*IfaceBinding, 0, len(set.Bindings))
+	for _, i := range set.Bindings {
+		if !types.Identical(i.Iface, t) {
+			bindings = append(bindings, i)
+		}
+	}
+	set.Bindings = bindings
+
+	values := make([]*Value, 0, len(set.Values))
+	for _, v := range set.Values {
+		if !types.Identical(v.Out, t) {
+			values = append(values, v)
+		}
+	}
+	set.Values = values
+
+	fields := make([]*Field, 0, len(set.Fields))
+	for _, f := range set.Fields {
+		if !hasType(f.Out) {
+			fields = append(fields, f)
+		}
+	}
+	set.Fields = fields
+
+	imports := make([]*ProviderSet, 0, len(set.Imports))
+	for _, p := range set.Imports {
+		clone := *p
+		if errs := oc.filterType(&clone, t); len(errs) > 0 {
+			return errs
+		}
+		imports = append(imports, &clone)
+	}
+	set.Imports = imports
+
+	var errs []error
+	set.providerMap, set.srcMap, errs = buildProviderMap(oc.fset, oc.hasher, set)
+	if len(errs) > 0 {
+		return errs
+	}
+	return nil
+}
+
 // processBind creates an interface binding from a wire.Bind call.
 func processBind(fset *token.FileSet, info *types.Info, call *ast.CallExpr) (*IfaceBinding, error) {
 	// Assumes that call.Fun is wire.Bind.
@@ -1122,7 +1235,6 @@ func findInjectorBuild(info *types.Info, fn *ast.FuncDecl) (*ast.CallExpr, error
 		default:
 			invalid = true
 		}
-
 	}
 	if wireBuildCall == nil {
 		return nil, nil

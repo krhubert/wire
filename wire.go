@@ -59,6 +59,31 @@ func NewSet(...interface{}) ProviderSet {
 	return ProviderSet{}
 }
 
+// Subtract removes type declaration from the provider set.
+//
+// Example:
+//
+//	var MySetA = wire.NewSet(
+//		otherpkg.FooSet,
+//		otherpkg.BarSet,
+//	)
+//
+//	var MySetB = wire.NewSet(
+//		otherpkg.CarSet,
+//		otherpkg.BarSet,
+//	)
+//
+//	func Build() Set {
+//		panic(wire.Build(
+//			MySetA,
+//			wire.Subtract(MySetB, otherpkg.BarSet),
+//			NewSet,
+//		))
+//	}
+func Subtract(...interface{}) ProviderSet {
+	return ProviderSet{}
+}
+
 // Build is placed in the body of an injector function template to declare the
 // providers to use. The Wire code generation tool will fill in an
 // implementation of the function. The arguments to Build are interpreted the
