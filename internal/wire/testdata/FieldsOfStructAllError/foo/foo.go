@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build wireinject
-// +build wireinject
-
 package main
 
-import (
-	"github.com/google/wire"
-)
+import "fmt"
 
-func injectedFoo() string {
-	wire.Build(
-		provideS,
-		wire.FieldsOf(new(S), "Foo"),
-	)
-	return ""
+type S struct {
+	Foo string
+	Bar int
 }
 
-func injectedFooBar() Out {
-	wire.Build(
-		provideS,
-		wire.FieldsOf(new(S), "*"),
-		wire.Struct(new(Out), "*"),
-	)
-	return Out{}
+func provideS() S {
+	return S{Foo: "Hello, World!", Bar: 3}
+}
+
+type Out struct {
+	Foo string
+	Bar int
+}
+
+func main() {
+	fmt.Println(injectedFooBar().Bar)
 }

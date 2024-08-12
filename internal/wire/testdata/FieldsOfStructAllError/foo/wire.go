@@ -21,18 +21,10 @@ import (
 	"github.com/google/wire"
 )
 
-func injectedFoo() string {
-	wire.Build(
-		provideS,
-		wire.FieldsOf(new(S), "Foo"),
-	)
-	return ""
-}
-
 func injectedFooBar() Out {
 	wire.Build(
 		provideS,
-		wire.FieldsOf(new(S), "*"),
+		wire.FieldsOf(new(S), "*", "Foo"),
 		wire.Struct(new(Out), "*"),
 	)
 	return Out{}

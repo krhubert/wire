@@ -1121,6 +1121,7 @@ func processFieldsOf(fset *token.FileSet, info *types.Info, call *ast.CallExpr) 
 		return nil, notePosition(fset.Position(call.Pos()),
 			errors.New("call to FieldsOf must specify fields to be extracted"))
 	}
+
 	const firstArgReqFormat = "first argument to FieldsOf must be a pointer to a struct or a pointer to a pointer to a struct; found %s"
 	structType := info.TypeOf(call.Args[0])
 	structPtr, ok := structType.(*types.Pointer)
@@ -1151,25 +1152,50 @@ func processFieldsOf(fset *token.FileSet, info *types.Info, call *ast.CallExpr) 
 	}
 
 	fields := make([]*Field, 0, len(call.Args)-1)
-	for i := 1; i < len(call.Args); i++ {
-		v, err := checkField(call.Args[i], struc)
-		if err != nil {
-			return nil, notePosition(fset.Position(call.Pos()), err)
+	if allFields(call) {
+		for i := 0; i < struc.NumFields(); i++ {
+			if isPrevented(struc.Tag(i)) {
+				continue
+			}
+
+			v := struc.Field(i)
+			out := []types.Type{v.Type()}
+			if isPtrToStruct {
+				// If the field is from a pointer to a struct, then
+				// wire.Fields also provides a pointer to the field.
+				out = append(out, types.NewPointer(v.Type()))
+			}
+
+			fields = append(fields, &Field{
+				Parent: structPtr.Elem(),
+				Name:   v.Name(),
+				Pkg:    v.Pkg(),
+				Pos:    v.Pos(),
+				Out:    out,
+			})
 		}
-		out := []types.Type{v.Type()}
-		if isPtrToStruct {
-			// If the field is from a pointer to a struct, then
-			// wire.Fields also provides a pointer to the field.
-			out = append(out, types.NewPointer(v.Type()))
+	} else {
+		for i := 1; i < len(call.Args); i++ {
+			v, err := checkField(call.Args[i], struc)
+			if err != nil {
+				return nil, notePosition(fset.Position(call.Pos()), err)
+			}
+			out := []types.Type{v.Type()}
+			if isPtrToStruct {
+				// If the field is from a pointer to a struct, then
+				// wire.Fields also provides a pointer to the field.
+				out = append(out, types.NewPointer(v.Type()))
+			}
+			fields = append(fields, &Field{
+				Parent: structPtr.Elem(),
+				Name:   v.Name(),
+				Pkg:    v.Pkg(),
+				Pos:    v.Pos(),
+				Out:    out,
+			})
 		}
-		fields = append(fields, &Field{
-			Parent: structPtr.Elem(),
-			Name:   v.Name(),
-			Pkg:    v.Pkg(),
-			Pos:    v.Pos(),
-			Out:    out,
-		})
 	}
+
 	return fields, nil
 }
 

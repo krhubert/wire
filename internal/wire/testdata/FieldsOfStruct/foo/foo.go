@@ -18,12 +18,19 @@ import "fmt"
 
 type S struct {
 	Foo string
+	Bar int
 }
 
 func provideS() S {
-	return S{Foo: "Hello, World!"}
+	return S{Foo: "Hello, World!", Bar: 3}
+}
+
+type Out struct {
+	Foo string
+	Bar int
 }
 
 func main() {
-	fmt.Println(injectedMessage())
+	fmt.Println(injectedFoo())
+	fmt.Println(injectedFooBar().Bar)
 }

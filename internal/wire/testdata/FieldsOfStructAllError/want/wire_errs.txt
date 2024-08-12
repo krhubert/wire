@@ -1,0 +1,1 @@
+example.com/foo/wire.go:x:y: "*" is not a field of struct{Foo string; Bar int}

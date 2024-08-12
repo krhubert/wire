@@ -8,8 +8,19 @@ package main
 
 // Injectors from wire.go:
 
-func injectedMessage() string {
+func injectedFoo() string {
 	s := provideS()
 	string2 := s.Foo
 	return string2
+}
+
+func injectedFooBar() Out {
+	s := provideS()
+	string2 := s.Foo
+	int2 := s.Bar
+	out := Out{
+		Foo: string2,
+		Bar: int2,
+	}
+	return out
 }
