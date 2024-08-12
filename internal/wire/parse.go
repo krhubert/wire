@@ -235,6 +235,9 @@ type Field struct {
 	// field type. If the field is coming from a pointer to a struct,
 	// there will be a second element providing a pointer to the field.
 	Out []types.Type
+
+	// AllowUnused is true if the field is allowed to be unused.
+	AllowUnused bool
 }
 
 // Load finds all the provider sets in the packages that match the given
@@ -1172,6 +1175,10 @@ func processFieldsOf(fset *token.FileSet, info *types.Info, call *ast.CallExpr) 
 				Pkg:    v.Pkg(),
 				Pos:    v.Pos(),
 				Out:    out,
+				// mark as unused to avoid unused field warning
+				// this is a special case and by default we don't want to allow unused fields
+				// but when it comes to FieldsOf as a provider we should allow it
+				AllowUnused: true,
 			})
 		}
 	} else {

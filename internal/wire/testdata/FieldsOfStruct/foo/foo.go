@@ -30,7 +30,12 @@ type Out struct {
 	Bar int
 }
 
+type Unused struct {
+	Foo string
+}
+
 func main() {
 	fmt.Println(injectedFoo())
 	fmt.Println(injectedFooBar().Bar)
+	fmt.Println(injectedFooUnusedBar().Foo)
 }

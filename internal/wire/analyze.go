@@ -312,6 +312,9 @@ func verifyArgsUsed(set *ProviderSet, used []*providerSetSrc) []error {
 		}
 	}
 	for _, f := range set.Fields {
+		if f.AllowUnused {
+			continue
+		}
 		found := false
 		for _, u := range used {
 			if u.Field == f {

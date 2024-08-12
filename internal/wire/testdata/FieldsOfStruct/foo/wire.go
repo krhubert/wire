@@ -37,3 +37,12 @@ func injectedFooBar() Out {
 	)
 	return Out{}
 }
+
+func injectedFooUnusedBar() Unused {
+	wire.Build(
+		provideS,
+		wire.FieldsOf(new(S), "*"),
+		wire.Struct(new(Unused), "*"),
+	)
+	return Unused{}
+}

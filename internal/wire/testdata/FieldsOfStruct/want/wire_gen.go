@@ -24,3 +24,12 @@ func injectedFooBar() Out {
 	}
 	return out
 }
+
+func injectedFooUnusedBar() Unused {
+	s := provideS()
+	string2 := s.Foo
+	unused := Unused{
+		Foo: string2,
+	}
+	return unused
+}
