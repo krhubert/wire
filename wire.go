@@ -84,6 +84,29 @@ func Subtract(...interface{}) ProviderSet {
 	return ProviderSet{}
 }
 
+// Union is a collection of providers that removes duplicates from the set.
+//
+// Example:
+//
+//	var fooSet = wire.NewSet(
+//		bazProvider,
+//		wire.Bind(new(BazInterface), new(BazStruct)),
+//		/* ... */
+//	)
+//
+//	var barSet = wire.NewSet(
+//		bazProvider,
+//		wire.Bind(new(BazInterface), new(BazStruct)),
+//		/* ... */
+//	)
+//
+//	var bazSet = wire.NewSet(
+//		wire.Union(fooSet, barSet),
+//	)
+func Union(...interface{}) ProviderSet {
+	return ProviderSet{}
+}
+
 // Build is placed in the body of an injector function template to declare the
 // providers to use. The Wire code generation tool will fill in an
 // implementation of the function. The arguments to Build are interpreted the

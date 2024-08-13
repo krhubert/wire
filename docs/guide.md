@@ -395,7 +395,8 @@ func provideFoo() Foo {
 func injectedMessage() string {
     wire.Build(
         provideFoo,
-        getS)
+        getS,
+    )
     return ""
 }
 ```
@@ -407,7 +408,8 @@ You can instead use `wire.FieldsOf` to use those fields directly without writing
 func injectedMessage() string {
     wire.Build(
         provideFoo,
-        wire.FieldsOf(new(Foo), "S"))
+        wire.FieldsOf(new(Foo), "S"),
+    )
     return ""
 }
 ```

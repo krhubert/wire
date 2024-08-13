@@ -332,7 +332,12 @@ func verifyArgsUsed(set *ProviderSet, used []*providerSetSrc) []error {
 // buildProviderMap creates the providerMap and srcMap fields for a given
 // provider set. The given provider set's providerMap and srcMap fields are
 // ignored.
-func buildProviderMap(fset *token.FileSet, hasher typeutil.Hasher, set *ProviderSet) (*typeutil.Map, *typeutil.Map, []error) {
+func buildProviderMap(
+	fset *token.FileSet,
+	hasher typeutil.Hasher,
+	set *ProviderSet,
+	allowSame bool,
+) (*typeutil.Map, *typeutil.Map, []error) {
 	providerMap := new(typeutil.Map)
 	providerMap.SetHasher(hasher)
 	srcMap := new(typeutil.Map) // to *providerSetSrc
@@ -347,7 +352,9 @@ func buildProviderMap(fset *token.FileSet, hasher typeutil.Hasher, set *Provider
 			arg := &InjectorArg{Args: set.InjectorArgs, Index: i}
 			src := &providerSetSrc{InjectorArg: arg}
 			if prevSrc := srcMap.At(typ); prevSrc != nil {
-				ec.add(bindingConflictError(fset, typ, set, src, prevSrc.(*providerSetSrc)))
+				if !allowSame {
+					ec.add(bindingConflictError(fset, typ, set, src, prevSrc.(*providerSetSrc)))
+				}
 				continue
 			}
 			providerMap.Set(typ, &ProvidedType{t: typ, a: arg})
@@ -359,7 +366,9 @@ func buildProviderMap(fset *token.FileSet, hasher typeutil.Hasher, set *Provider
 		src := &providerSetSrc{Import: imp}
 		imp.providerMap.Iterate(func(k types.Type, v interface{}) {
 			if prevSrc := srcMap.At(k); prevSrc != nil {
-				ec.add(bindingConflictError(fset, k, set, src, prevSrc.(*providerSetSrc)))
+				if !allowSame {
+					ec.add(bindingConflictError(fset, k, set, src, prevSrc.(*providerSetSrc)))
+				}
 				return
 			}
 			providerMap.Set(k, v)
@@ -375,7 +384,12 @@ func buildProviderMap(fset *token.FileSet, hasher typeutil.Hasher, set *Provider
 		src := &providerSetSrc{Provider: p}
 		for _, typ := range p.Out {
 			if prevSrc := srcMap.At(typ); prevSrc != nil {
-				ec.add(bindingConflictError(fset, typ, set, src, prevSrc.(*providerSetSrc)))
+				if !allowSame {
+					ec.add(bindingConflictError(fset, typ, set, src, prevSrc.(*providerSetSrc)))
+				} else if ps := prevSrc.(*providerSetSrc); ps.Provider != nil && p != nil && !ps.Provider.Equal(p) {
+					ec.add(differentBindingConflictError(fset, typ, set, src, prevSrc.(*providerSetSrc)))
+				}
+
 				continue
 			}
 			providerMap.Set(typ, &ProvidedType{t: typ, p: p})
@@ -385,7 +399,9 @@ func buildProviderMap(fset *token.FileSet, hasher typeutil.Hasher, set *Provider
 	for _, v := range set.Values {
 		src := &providerSetSrc{Value: v}
 		if prevSrc := srcMap.At(v.Out); prevSrc != nil {
-			ec.add(bindingConflictError(fset, v.Out, set, src, prevSrc.(*providerSetSrc)))
+			if !allowSame {
+				ec.add(bindingConflictError(fset, v.Out, set, src, prevSrc.(*providerSetSrc)))
+			}
 			continue
 		}
 		providerMap.Set(v.Out, &ProvidedType{t: v.Out, v: v})
@@ -395,7 +411,9 @@ func buildProviderMap(fset *token.FileSet, hasher typeutil.Hasher, set *Provider
 		src := &providerSetSrc{Field: f}
 		for _, typ := range f.Out {
 			if prevSrc := srcMap.At(typ); prevSrc != nil {
-				ec.add(bindingConflictError(fset, typ, set, src, prevSrc.(*providerSetSrc)))
+				if !allowSame {
+					ec.add(bindingConflictError(fset, typ, set, src, prevSrc.(*providerSetSrc)))
+				}
 				continue
 			}
 			providerMap.Set(typ, &ProvidedType{t: typ, f: f})
@@ -411,7 +429,9 @@ func buildProviderMap(fset *token.FileSet, hasher typeutil.Hasher, set *Provider
 	for _, b := range set.Bindings {
 		src := &providerSetSrc{Binding: b}
 		if prevSrc := srcMap.At(b.Iface); prevSrc != nil {
-			ec.add(bindingConflictError(fset, b.Iface, set, src, prevSrc.(*providerSetSrc)))
+			if !allowSame {
+				ec.add(bindingConflictError(fset, b.Iface, set, src, prevSrc.(*providerSetSrc)))
+			}
 			continue
 		}
 		concrete := providerMap.At(b.Provided)
@@ -518,6 +538,17 @@ func bindingConflictError(fset *token.FileSet, typ types.Type, set *ProviderSet,
 		fmt.Fprintf(sb, "%s has ", set.VarName)
 	}
 	fmt.Fprintf(sb, "multiple bindings for %s\n", types.TypeString(typ, nil))
+	fmt.Fprintf(sb, "current:\n<- %s\n", strings.Join(cur.trace(fset, typ), "\n<- "))
+	fmt.Fprintf(sb, "previous:\n<- %s", strings.Join(prev.trace(fset, typ), "\n<- "))
+	return notePosition(fset.Position(set.Pos), errors.New(sb.String()))
+}
+
+func differentBindingConflictError(fset *token.FileSet, typ types.Type, set *ProviderSet, cur, prev *providerSetSrc) error {
+	sb := new(strings.Builder)
+	if set.VarName != "" {
+		fmt.Fprintf(sb, "%s has ", set.VarName)
+	}
+	fmt.Fprintf(sb, "different bindings for %s\n", types.TypeString(typ, nil))
 	fmt.Fprintf(sb, "current:\n<- %s\n", strings.Join(cur.trace(fset, typ), "\n<- "))
 	fmt.Fprintf(sb, "previous:\n<- %s", strings.Join(prev.trace(fset, typ), "\n<- "))
 	return notePosition(fset.Position(set.Pos), errors.New(sb.String()))

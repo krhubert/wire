@@ -179,6 +179,23 @@ type Provider struct {
 	HasErr bool
 }
 
+func (p *Provider) Equal(x *Provider) bool {
+	if p.Pkg != x.Pkg || p.Name != x.Name || p.Pos != x.Pos || p.Varargs != x.Varargs || p.IsStruct != x.IsStruct || p.HasCleanup != x.HasCleanup || p.HasErr != x.HasErr || len(p.Args) != len(x.Args) || len(p.Out) != len(x.Out) {
+		return false
+	}
+	for i := range p.Args {
+		if p.Args[i].Type != x.Args[i].Type || p.Args[i].FieldName != x.Args[i].FieldName {
+			return false
+		}
+	}
+	for i := range p.Out {
+		if !types.Identical(p.Out[i], x.Out[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // ProviderInput describes an incoming edge in the provider graph.
 type ProviderInput struct {
 	Type types.Type
@@ -552,6 +569,9 @@ func (oc *objectCache) processExpr(info *types.Info, pkgPath string, expr ast.Ex
 		case "Subtract":
 			pset, errs := oc.processSubtract(info, pkgPath, call, nil, varName)
 			return pset, notePositionAll(exprPos, errs)
+		case "Union":
+			pset, errs := oc.processUnion(info, pkgPath, call, nil, varName)
+			return pset, notePositionAll(exprPos, errs)
 		case "Bind":
 			b, err := processBind(oc.fset, info, call)
 			if err != nil {
@@ -631,7 +651,7 @@ func (oc *objectCache) processNewSet(info *types.Info, pkgPath string, call *ast
 		return nil, ec.errors
 	}
 	var errs []error
-	pset.providerMap, pset.srcMap, errs = buildProviderMap(oc.fset, oc.hasher, pset)
+	pset.providerMap, pset.srcMap, errs = buildProviderMap(oc.fset, oc.hasher, pset, false)
 	if len(errs) > 0 {
 		return nil, errs
 	}
@@ -989,11 +1009,57 @@ func (oc *objectCache) filterType(set *ProviderSet, t types.Type) []error {
 	set.Imports = imports
 
 	var errs []error
-	set.providerMap, set.srcMap, errs = buildProviderMap(oc.fset, oc.hasher, set)
+	set.providerMap, set.srcMap, errs = buildProviderMap(oc.fset, oc.hasher, set, false)
 	if len(errs) > 0 {
 		return errs
 	}
 	return nil
+}
+
+func (oc *objectCache) processUnion(info *types.Info, pkgPath string, call *ast.CallExpr, args *InjectorArgs, varName string) (*ProviderSet, []error) {
+	// Assumes that call.Fun is wire.NewSet or wire.Build.
+
+	pset := &ProviderSet{
+		Pos:          call.Pos(),
+		InjectorArgs: args,
+		PkgPath:      pkgPath,
+		VarName:      varName,
+	}
+	ec := new(errorCollector)
+	for _, arg := range call.Args {
+		item, errs := oc.processExpr(info, pkgPath, arg, "")
+		if len(errs) > 0 {
+			ec.add(errs...)
+			continue
+		}
+
+		switch item := item.(type) {
+		case *Provider:
+			pset.Providers = append(pset.Providers, item)
+		case *ProviderSet:
+			pset.Imports = append(pset.Imports, item)
+		case *IfaceBinding:
+			pset.Bindings = append(pset.Bindings, item)
+		case *Value:
+			pset.Values = append(pset.Values, item)
+		case []*Field:
+			pset.Fields = append(pset.Fields, item...)
+		default:
+			panic("unknown item type")
+		}
+	}
+	if len(ec.errors) > 0 {
+		return nil, ec.errors
+	}
+	var errs []error
+	pset.providerMap, pset.srcMap, errs = buildProviderMap(oc.fset, oc.hasher, pset, true)
+	if len(errs) > 0 {
+		return nil, errs
+	}
+	if errs := verifyAcyclic(pset.providerMap, oc.hasher); len(errs) > 0 {
+		return nil, errs
+	}
+	return pset, nil
 }
 
 // processBind creates an interface binding from a wire.Bind call.

@@ -1,0 +1,11 @@
+example.com/foo/wire.go:x:y: different bindings for example.com/foo.Foo
+current:
+<- provider "provideFooBytes" (example.com/foo/foo.go:x:y)
+previous:
+<- provider "provideFooStrings" (example.com/foo/foo.go:x:y)
+
+example.com/foo/wire.go:x:y: different bindings for example.com/foo.Foo
+current:
+<- provider "provideFooStrings2" (example.com/foo/foo.go:x:y)
+previous:
+<- provider "provideFooStrings" (example.com/foo/foo.go:x:y)
