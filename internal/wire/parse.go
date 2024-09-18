@@ -1097,9 +1097,18 @@ func processBind(fset *token.FileSet, info *types.Info, call *ast.CallExpr) (*If
 		return nil, notePosition(fset.Position(call.Pos()),
 			errors.New("cannot bind interface to itself"))
 	}
+
 	if !types.Implements(provided, methodSet) {
-		return nil, notePosition(fset.Position(call.Pos()),
-			fmt.Errorf("%s does not implement %s", types.TypeString(provided, nil), types.TypeString(iface, nil)))
+
+		providerType := types.TypeString(provided, nil)
+		ifaceType := types.TypeString(iface, nil)
+		msg := fmt.Sprintf("%s does not implement %s", providerType, ifaceType)
+
+		if providedPtr := types.NewPointer(provided); types.Implements(providedPtr, methodSet) {
+			msg += fmt.Sprintf("; but pointer to *%s implements the interface - maybe this is a mistake and you should pass a pointer to wire.Bind", providerType)
+		}
+
+		return nil, notePosition(fset.Position(call.Pos()), fmt.Errorf(msg))
 	}
 	return &IfaceBinding{
 		Pos:      call.Pos(),
