@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"go/token"
 	"go/types"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -89,7 +88,7 @@ func newGenerateOptions(headerFile string) (*wire.GenerateOptions, error) {
 	opts := new(wire.GenerateOptions)
 	if headerFile != "" {
 		var err error
-		opts.Header, err = ioutil.ReadFile(headerFile)
+		opts.Header, err = os.ReadFile(headerFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read header file %q: %v", headerFile, err)
 		}
@@ -107,6 +106,7 @@ func (*genCmd) Name() string { return "gen" }
 func (*genCmd) Synopsis() string {
 	return "generate the wire_gen.go file for each package"
 }
+
 func (*genCmd) Usage() string {
 	return `gen [packages]
 
@@ -115,6 +115,7 @@ func (*genCmd) Usage() string {
   If no packages are listed, it defaults to ".".
 `
 }
+
 func (cmd *genCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.headerFile, "header_file", "", "path to file to insert as a header in wire_gen.go")
 	f.StringVar(&cmd.prefixFileName, "output_file_prefix", "", "string to prepend to output file names.")
@@ -179,6 +180,7 @@ func (*diffCmd) Name() string { return "diff" }
 func (*diffCmd) Synopsis() string {
 	return "output a diff between existing wire_gen.go files and what gen would generate"
 }
+
 func (*diffCmd) Usage() string {
 	return `diff [packages]
 
@@ -191,10 +193,12 @@ func (*diffCmd) Usage() string {
   plus an error if trouble.
 `
 }
+
 func (cmd *diffCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.headerFile, "header_file", "", "path to file to insert as a header in wire_gen.go")
 	f.StringVar(&cmd.tags, "tags", "", "append build tags to the default wirebuild")
 }
+
 func (cmd *diffCmd) Execute(ctx context.Context, f *flag.FlagSet, args ...interface{}) subcommands.ExitStatus {
 	const (
 		errReturn  = subcommands.ExitStatus(2)
@@ -235,7 +239,7 @@ func (cmd *diffCmd) Execute(ctx context.Context, f *flag.FlagSet, args ...interf
 			continue
 		}
 		// Assumes the current file is empty if we can't read it.
-		cur, _ := ioutil.ReadFile(out.OutputPath)
+		cur, _ := os.ReadFile(out.OutputPath)
 		if diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
 			A: difflib.SplitLines(string(cur)),
 			B: difflib.SplitLines(string(out.Content)),
@@ -268,6 +272,7 @@ func (*showCmd) Name() string { return "show" }
 func (*showCmd) Synopsis() string {
 	return "describe all top-level provider sets"
 }
+
 func (*showCmd) Usage() string {
 	return `show [packages]
 
@@ -279,9 +284,11 @@ func (*showCmd) Usage() string {
   If no packages are listed, it defaults to ".".
 `
 }
+
 func (cmd *showCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.tags, "tags", "", "append build tags to the default wirebuild")
 }
+
 func (cmd *showCmd) Execute(ctx context.Context, f *flag.FlagSet, args ...interface{}) subcommands.ExitStatus {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -360,6 +367,7 @@ func (*checkCmd) Name() string { return "check" }
 func (*checkCmd) Synopsis() string {
 	return "print any Wire errors found"
 }
+
 func (*checkCmd) Usage() string {
 	return `check [-tags tag,list] [packages]
 
@@ -369,9 +377,11 @@ func (*checkCmd) Usage() string {
   If no packages are listed, it defaults to ".".
 `
 }
+
 func (cmd *checkCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.tags, "tags", "", "append build tags to the default wirebuild")
 }
+
 func (cmd *checkCmd) Execute(ctx context.Context, f *flag.FlagSet, args ...interface{}) subcommands.ExitStatus {
 	wd, err := os.Getwd()
 	if err != nil {

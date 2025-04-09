@@ -16,11 +16,11 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 )
 
 func main() {
 	r := injectedReader()
-	buf, _ := ioutil.ReadAll(r)
+	buf, _ := io.ReadAll(r)
 	fmt.Println(string(buf))
 }

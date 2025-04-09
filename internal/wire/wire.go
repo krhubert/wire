@@ -26,7 +26,7 @@ import (
 	"go/printer"
 	"go/token"
 	"go/types"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -57,7 +57,7 @@ func (gen GenerateResult) Commit() error {
 	if len(gen.Content) == 0 {
 		return nil
 	}
-	return ioutil.WriteFile(gen.OutputPath, gen.Content, 0666)
+	return os.WriteFile(gen.OutputPath, gen.Content, 0666)
 }
 
 // GenerateOptions holds options for Generate.
