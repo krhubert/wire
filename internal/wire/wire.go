@@ -66,6 +66,7 @@ type GenerateOptions struct {
 	Header           []byte
 	PrefixOutputFile string
 	Tags             string
+	NoDecls          bool
 }
 
 // Generate performs dependency injection for the packages that match the given
@@ -113,7 +114,9 @@ func Generate(ctx context.Context, wd string, env []string, patterns []string, o
 			generated[i].Errs = errs
 			continue
 		}
-		copyNonInjectorDecls(g, injectorFiles, pkg.TypesInfo)
+		if !opts.NoDecls {
+			copyNonInjectorDecls(g, injectorFiles, pkg.TypesInfo)
+		}
 		goSrc := g.frame(opts.Tags)
 		if len(opts.Header) > 0 {
 			goSrc = append(opts.Header, goSrc...)
