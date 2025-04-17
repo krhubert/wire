@@ -9,7 +9,9 @@ package main
 
 func injectInterface() Interface {
 	select2 := provideSelect()
-	mainInterface := provideInterface(select2)
+	mainInterface := provideInterface(
+		select2,
+	)
 	return mainInterface
 }
 

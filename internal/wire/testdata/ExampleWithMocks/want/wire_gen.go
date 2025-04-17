@@ -26,7 +26,9 @@ var (
 // initMockedAppFromArgs returns an app with mocked dependencies provided via
 // arguments (Approach A). Note that the argument's type is the interface
 // type (timer), but the concrete mock type should be passed.
-func initMockedAppFromArgs(mt timer) *app {
+func initMockedAppFromArgs(
+	mt timer,
+) *app {
 	mainGreeter := greeter{
 		T: mt,
 	}

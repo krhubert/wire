@@ -14,8 +14,13 @@ import (
 
 // Injectors from foo.go:
 
-func inject(context3 context2.Context, err2 struct{}) (context, error) {
-	mainContext, err := Provide(context3)
+func inject(
+	context3 context2.Context,
+	err2 struct{},
+) (context, error) {
+	mainContext, err := Provide(
+		context3,
+	)
 	if err != nil {
 		return context{}, err
 	}

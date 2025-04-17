@@ -9,12 +9,16 @@ package main
 
 func injectBaz() (Baz, func(), error) {
 	foo, cleanup := provideFoo()
-	bar, cleanup2, err := provideBar(foo)
+	bar, cleanup2, err := provideBar(
+		foo,
+	)
 	if err != nil {
 		cleanup()
 		return 0, nil, err
 	}
-	baz, err := provideBaz(bar)
+	baz, err := provideBaz(
+		bar,
+	)
 	if err != nil {
 		cleanup2()
 		cleanup()

@@ -14,13 +14,23 @@ import (
 
 // Injectors from wire.go:
 
-func newMainService(mainConfig MainConfig) *MainService {
+func newMainService(
+	mainConfig MainConfig,
+) *MainService {
 	config := mainConfig.Foo
-	service := foo.New(config)
+	service := foo.New(
+		config,
+	)
 	barConfig := mainConfig.Bar
-	barService := bar.New(barConfig, service)
+	barService := bar.New(
+		barConfig,
+		service,
+	)
 	bazConfig := mainConfig.baz
-	bazService := baz.New(bazConfig, barService)
+	bazService := baz.New(
+		bazConfig,
+		barService,
+	)
 	mainService := &MainService{
 		Foo: service,
 		Bar: barService,

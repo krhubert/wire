@@ -9,7 +9,9 @@ package main
 
 func injectFooBar() FooBar {
 	foo := _wireFooValue
-	fooBar := provideFooBar(foo)
+	fooBar := provideFooBar(
+		foo,
+	)
 	return fooBar
 }
 

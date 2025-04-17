@@ -9,7 +9,9 @@ package main
 
 func injectBar() (*Bar, func()) {
 	foo, cleanup := provideFoo()
-	bar, cleanup2 := provideBar(foo)
+	bar, cleanup2 := provideBar(
+		foo,
+	)
 	return bar, func() {
 		cleanup2()
 		cleanup()

@@ -17,9 +17,14 @@ import (
 func newBazService() *baz.Service {
 	config := _wireConfigValue
 	fooConfig := config.Foo
-	service := foo.New(fooConfig)
+	service := foo.New(
+		fooConfig,
+	)
 	barConfig := config.Bar
-	barService := bar.New(barConfig, service)
+	barService := bar.New(
+		barConfig,
+		service,
+	)
 	bazService := &baz.Service{
 		Foo: service,
 		Bar: barService,

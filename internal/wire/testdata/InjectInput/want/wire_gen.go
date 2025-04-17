@@ -7,8 +7,13 @@ package main
 
 // Injectors from wire.go:
 
-func injectFooBar(foo Foo) FooBar {
+func injectFooBar(
+	foo Foo,
+) FooBar {
 	bar := provideBar()
-	fooBar := provideFooBar(foo, bar)
+	fooBar := provideFooBar(
+		foo,
+		bar,
+	)
 	return fooBar
 }

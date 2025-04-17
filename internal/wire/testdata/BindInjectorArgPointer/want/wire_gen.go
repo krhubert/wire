@@ -7,7 +7,11 @@ package main
 
 // Injectors from wire.go:
 
-func inject(foo *Foo) *Bar {
-	bar := NewBar(foo)
+func inject(
+	foo *Foo,
+) *Bar {
+	bar := NewBar(
+		foo,
+	)
 	return bar
 }

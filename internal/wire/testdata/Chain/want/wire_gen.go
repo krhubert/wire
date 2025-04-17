@@ -9,6 +9,8 @@ package main
 
 func injectFooBar() FooBar {
 	foo := provideFoo()
-	fooBar := provideFooBar(foo)
+	fooBar := provideFooBar(
+		foo,
+	)
 	return fooBar
 }

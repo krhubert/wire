@@ -11,8 +11,13 @@ import (
 
 // Injectors from wire.go:
 
-func inject(contextContext context2.Context, arg struct{}) (context, error) {
-	mainContext, err := provide(contextContext)
+func inject(
+	contextContext context2.Context,
+	arg struct{},
+) (context, error) {
+	mainContext, err := provide(
+		contextContext,
+	)
 	if err != nil {
 		return context{}, err
 	}

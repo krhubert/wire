@@ -19,6 +19,9 @@ import (
 func injectFooBar() FooBar {
 	foo := provideFoo()
 	barBar := bar.ProvideBar()
-	fooBar := provideFooBar(foo, barBar)
+	fooBar := provideFooBar(
+		foo,
+		barBar,
+	)
 	return fooBar
 }

@@ -11,6 +11,8 @@ import (
 
 // Injectors from wire.go:
 
-func injectStringer(s MyString) fmt.Stringer {
+func injectStringer(
+	s MyString,
+) fmt.Stringer {
 	return s
 }

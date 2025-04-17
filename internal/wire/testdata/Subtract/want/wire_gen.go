@@ -7,15 +7,28 @@ package main
 
 // Injectors from wire.go:
 
-func inject(name BarName, opts *FooOptions) *Bar {
-	foo := provideFoo(opts)
-	bar := provideBar(foo, name)
+func inject(
+	name BarName,
+	opts *FooOptions,
+) *Bar {
+	foo := provideFoo(
+		opts,
+	)
+	bar := provideBar(
+		foo,
+		name,
+	)
 	return bar
 }
 
-func injectBarService(name BarName, opts *FakeBarService) *FooBar {
+func injectBarService(
+	name BarName,
+	opts *FakeBarService,
+) *FooBar {
 	fooOptions := provideFooOptions()
-	foo := provideFoo(fooOptions)
+	foo := provideFoo(
+		fooOptions,
+	)
 	fooBar := &FooBar{
 		BarService: opts,
 		Foo:        foo,
@@ -23,8 +36,14 @@ func injectBarService(name BarName, opts *FakeBarService) *FooBar {
 	return fooBar
 }
 
-func injectFooBarService(name BarName, opts *FooOptions, bar *FakeBarService) *FooBar {
-	foo := provideFoo(opts)
+func injectFooBarService(
+	name BarName,
+	opts *FooOptions,
+	bar *FakeBarService,
+) *FooBar {
+	foo := provideFoo(
+		opts,
+	)
 	fooBar := &FooBar{
 		BarService: bar,
 		Foo:        foo,
@@ -32,7 +51,11 @@ func injectFooBarService(name BarName, opts *FooOptions, bar *FakeBarService) *F
 	return fooBar
 }
 
-func injectNone(name BarName, foo Foo, bar *FakeBarService) *FooBar {
+func injectNone(
+	name BarName,
+	foo Foo,
+	bar *FakeBarService,
+) *FooBar {
 	fooBar := &FooBar{
 		BarService: bar,
 		Foo:        foo,

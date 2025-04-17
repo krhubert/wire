@@ -612,10 +612,11 @@ func injectPass(name string, sig *types.Signature, calls []call, set *ProviderSe
 		}
 	}
 	ig.p("func %s(", name)
+	if params.Len() > 0 {
+		ig.p("\n")
+	}
+
 	for i := 0; i < params.Len(); i++ {
-		if i > 0 {
-			ig.p(", ")
-		}
 		pi := params.At(i)
 		a := pi.Name()
 		if a == "" || a == "_" {
@@ -627,10 +628,11 @@ func injectPass(name string, sig *types.Signature, calls []call, set *ProviderSe
 		if sig.Variadic() && i == params.Len()-1 {
 			// Keep the varargs signature instead of a slice for the last argument if the
 			// injector is variadic.
-			ig.p("%s ...%s", ig.paramNames[i], types.TypeString(pi.Type().(*types.Slice).Elem(), ig.g.qualifyPkg))
+			ig.p("\t%s ...%s", ig.paramNames[i], types.TypeString(pi.Type().(*types.Slice).Elem(), ig.g.qualifyPkg))
 		} else {
-			ig.p("%s %s", ig.paramNames[i], types.TypeString(pi.Type(), ig.g.qualifyPkg))
+			ig.p("\t%s %s", ig.paramNames[i], types.TypeString(pi.Type(), ig.g.qualifyPkg))
 		}
+		ig.p(",\n")
 	}
 	outTypeString := types.TypeString(injectSig.out, ig.g.qualifyPkg)
 	switch {
@@ -691,18 +693,21 @@ func (ig *injectorGen) funcProviderCall(lname string, c *call, injectSig outputS
 	}
 	ig.p(" := ")
 	ig.p("%s(", ig.g.qualifiedID(c.pkg.Name(), c.pkg.Path(), c.name))
-	for i, a := range c.args {
-		if i > 0 {
-			ig.p(", ")
-		}
+	if len(c.args) > 0 {
+		ig.p("\n")
+	}
+	for _, a := range c.args {
 		if a < len(ig.paramNames) {
-			ig.p("%s", ig.paramNames[a])
+			ig.p("\t%s", ig.paramNames[a])
 		} else {
-			ig.p("%s", ig.localNames[a-len(ig.paramNames)])
+			ig.p("\t%s", ig.localNames[a-len(ig.paramNames)])
+		}
+		if !c.varargs {
+			ig.p(",\n")
 		}
 	}
 	if c.varargs {
-		ig.p("...")
+		ig.p("...,\n")
 	}
 	ig.p(")\n")
 	if c.hasErr {
