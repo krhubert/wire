@@ -88,9 +88,19 @@ func Generate(ctx context.Context, wd string, env []string, patterns []string, o
 	if len(errs) > 0 {
 		return nil, errs
 	}
-	generated := make([]GenerateResult, len(pkgs))
-	for i, pkg := range pkgs {
-		generated[i].PkgPath = pkg.PkgPath
+	generated := make([]GenerateResult, 0, len(pkgs))
+	for _, pkg := range pkgs {
+		if len(pkg.GoFiles) == 0 {
+			// package contains no Go files, it can contain only test files.
+			// skip it. in this case, we don't need to generate any code.
+			continue
+		}
+
+		generated = append(generated, GenerateResult{
+			PkgPath: pkg.PkgPath,
+		})
+		i := len(generated) - 1
+
 		outDir, err := detectOutputDir(pkg.GoFiles)
 		if err != nil {
 			generated[i].Errs = append(generated[i].Errs, err)
