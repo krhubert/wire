@@ -1108,7 +1108,7 @@ func processBind(fset *token.FileSet, info *types.Info, call *ast.CallExpr) (*If
 			msg += fmt.Sprintf("; but pointer to *%s implements the interface - maybe this is a mistake and you should pass a pointer to wire.Bind", providerType)
 		}
 
-		return nil, notePosition(fset.Position(call.Pos()), fmt.Errorf(msg))
+		return nil, notePosition(fset.Position(call.Pos()), errors.New(msg))
 	}
 	return &IfaceBinding{
 		Pos:      call.Pos(),

@@ -21,19 +21,10 @@ if [[ $# -gt 0 ]]; then
   exit 64
 fi
 
-# Run Go tests. Only do coverage for the Linux build
-# because it is slow, and codecov will only save the last one anyway.
+# Run Go tests.
 result=0
-if [[ "${RUNNER_OS:-}" == "Linux" ]]; then
-  echo "Running Go tests (with coverage)..."
-  go test -mod=readonly -race -coverpkg=./... -coverprofile=coverage.out ./... || result=1
-  if [ -f coverage.out ] && [ $result -eq 0 ]; then
-    bash <(curl -s https://codecov.io/bash)
-  fi
-else
-  echo "Running Go tests..."
-  go test -mod=readonly -race ./... || result=1
-fi
+echo "Running Go tests..."
+go test -mod=readonly -race ./... || result=1
 
 # No need to run other checks on OSs other than linux.
 # We default RUNNER_OS to "Linux" so that we don't abort here when run locally.
@@ -47,12 +38,11 @@ mapfile -t go_files < <(find . -name '*.go' -type f | grep -v testdata)
 DIFF="$(gofmt -s -d "${go_files[@]}")"
 if [ -n "$DIFF" ]; then
   echo "FAIL: please run gofmt -s and commit the result"
-  echo "$DIFF";
-  result=1;
+  echo "$DIFF"
+  result=1
 else
   echo "OK"
-fi;
-
+fi
 
 # Ensure that the code has no extra dependencies (including transitive
 # dependencies) that we're not already aware of by comparing with
@@ -68,13 +58,12 @@ echo "Ensuring that there are no dependencies not listed in ./internal/alldeps..
   result=1
 }
 
-
 # For pull requests, check if there are undeclared incompatible API changes.
 # Skip this if we're already going to fail since it is expensive.
 # CURRENTLY BROKEN
 # if [[ ${result} -eq 0 ]] && [[ ! -z "${GITHUB_HEAD_REF:-x}" ]]; then
-  # echo
-  # ./internal/check_api_change.sh || result=1;
+# echo
+# ./internal/check_api_change.sh || result=1;
 # fi
 
 exit $result

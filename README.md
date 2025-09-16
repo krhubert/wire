@@ -2,8 +2,6 @@
 
 [![Build Status](https://github.com/google/wire/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/google/wire/actions)
 [![godoc](https://godoc.org/github.com/google/wire?status.svg)][godoc]
-[![Coverage](https://codecov.io/gh/google/wire/branch/master/graph/badge.svg)](https://codecov.io/gh/google/wire)
-
 
 Wire is a code generation tool that automates connecting components using
 [dependency injection][]. Dependencies between components are represented in
@@ -17,7 +15,6 @@ For an overview, see the [introductory blog post][].
 [dependency injection]: https://en.wikipedia.org/wiki/Dependency_injection
 [introductory blog post]: https://blog.golang.org/wire
 [godoc]: https://godoc.org/github.com/google/wire
-[travis]: https://travis-ci.com/google/wire
 
 ## Installing
 
@@ -57,4 +54,3 @@ For questions, please use [GitHub Discussions](https://github.com/google/wire/di
 This project is covered by the Go [Code of Conduct][].
 
 [Code of Conduct]: ./CODE_OF_CONDUCT.md
-[go-cloud mailing list]: https://groups.google.com/forum/#!forum/go-cloud
